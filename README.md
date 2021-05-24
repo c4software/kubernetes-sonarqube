@@ -2,13 +2,16 @@
 
 Sonarqube in Kubernetes YAML deployment file (tested with K3D)
 
-## Volume glitch
-
-To make the stack working you have to manually change the ownership, according the yaml the fsGroup is 999 so :
+## Create Kubernetes Cluster
 
 ```sh
-sudo chown 999 -R sonarqube-data/
+k3d cluster create --api-port 127.0.0.1:8484 -p "127.0.0.1:42400:80@loadbalancer" --volume $(pwd)/volume/:/mnt/data/ -s 1 -a 2 clusterName
 ```
 
+## Create Sonarqube pod
 
+```sh
+kubectl apply -f deployment-app.yaml
+```
 
+Wait the first boot can be long.
