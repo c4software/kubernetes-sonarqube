@@ -8,7 +8,22 @@ metadata:
 spec:
   storageClassName: manual
   capacity:
-    storage: 10Gi
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/data"
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: sonar-extensions-pv-volume
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 1Gi
   accessModes:
     - ReadWriteOnce
   hostPath:
@@ -19,12 +34,26 @@ kind: PersistentVolumeClaim
 metadata:
   name: sonar-data-claim
 spec:
+  volumeName: "sonar-data-pv-volume"
   storageClassName: manual
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 10Gi
+      storage: 1Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sonar-extensions-claim
+spec:
+  volumeName: "sonar-extensions-pv-volume"
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -44,7 +73,7 @@ spec:
         fsGroup: 999
       containers:
         - name: sonarqube
-          image: sonarqube:6.7.7-community
+          image: sonarqube:8.9-community
           env:
             - name: SONAR_ES_BOOTSTRAP_CHECKS_DISABLE
               value: "true"
@@ -59,10 +88,16 @@ spec:
             - name: sonar-data
               mountPath: /opt/sonarqube/data
               subPath: sonarqube-data
+            - name: sonar-extensions
+              mountPath: /opt/sonarqube/extensions
+              subPath: sonarqube-extensions
       volumes:
         - name: sonar-data
           persistentVolumeClaim:
             claimName: sonar-data-claim
+        - name: sonar-extensions
+          persistentVolumeClaim:
+            claimName: sonar-extensions-claim
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
